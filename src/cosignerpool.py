@@ -18,6 +18,8 @@
 
 import os
 import sys
+import time
+import calendar
 import traceback
 import threading
 
@@ -25,6 +27,7 @@ from socketserver import ThreadingMixIn
 from xmlrpc.server import SimpleXMLRPCServer
 
 import plyvel
+from apscheduler.schedulers.background import BackgroundScheduler
 
 from log_models import MyLoggerFactory
 
@@ -46,6 +49,7 @@ def run_server(host, port, logger):
     server.register_function(announce, 'announce')
     server.register_function(message, 'message')
     server.register_function(ping, 'ping')
+    server.register_function(get_current_time, 'get_current_time')
     server.running = True
 
     while server.running:
@@ -163,6 +167,31 @@ def ping():
 
     return 'pong'
 
+def get_current_time():
+    """
+    Return current time on server.
+    """
+
+    return calendar.timegm(time.gmtime())
+
+def collect_garbage(db, logger):
+    """
+    Delete any locks that are older than 10 minutes
+
+    Arguments:
+        db -- database connection
+    """
+
+    for index, kv, in enumerate(db):
+        key, value = str(kv[0].decode('utf8')), kv[1]
+        # we only want locks
+        if "_lock" not in key:
+            continue
+        # if lock timestamp is greater than 10 minutes
+        expired = (calendar.timegm(time.gmtime()) - int(value)) > (10 * 60)
+        if expired:
+            db.delete(key.encode('utf8'))
+            logger.info("GBG :: {}:{}".format(key, value))
 
 if __name__ == '__main__':
 
@@ -186,8 +215,14 @@ if __name__ == '__main__':
     # create or set leveldb database at '/db_cosigner'
     db = plyvel.DB(dbpath, create_if_missing=True, compression=None)
 
+    # start and configure scheduler for garbage collection
+    scheduler = BackgroundScheduler()
+    scheduler.start()
+    job = scheduler.add_job(collect_garbage, 'interval', [db, logger], seconds=30)
+
     logger.info("Server starting on {}:{}".format(my_host, my_port))
     print("Server started. See '../log/server.log' for more information")
     run_server(my_host, my_port, logger)
 
+    job.remove()
     db.close()

@@ -21,9 +21,7 @@ services:
         volumes:
             - "./Nginx/Cosignerpool.template:/etc/nginx/conf.d/Cosignerpool.template"
             - "web-root:/var/www/html"
-        environment:
-            - NGINX_HOST=${serverName}
-        command: /bin/bash -c "envsubst < /etc/nginx/conf.d/Cosignerpool.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+        command: /bin/bash -c "cat /etc/nginx/conf.d/Cosignerpool.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     nginxSSL:
         image: nginx:latest
         network_mode: host

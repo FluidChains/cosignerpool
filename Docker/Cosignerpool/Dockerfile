@@ -2,9 +2,11 @@ FROM python:3.7
 
 COPY . /app
 
-WORKDIR /app/src
+WORKDIR /app
 
-RUN pip install --user plyvel 
+RUN pip install --user -r requirements.txt
+
+WORKDIR /app/src
 
 EXPOSE ${COSIGNER_SERVICE_PORT}
 

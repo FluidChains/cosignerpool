@@ -20,10 +20,7 @@ import os
 import sys
 import time
 import calendar
-import traceback
-import threading
 
-from socketserver import ThreadingMixIn
 from xmlrpc.server import SimpleXMLRPCServer
 
 import plyvel
@@ -31,17 +28,10 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from log_models import MyLoggerFactory
 
-r_count, w_count = 0, 0
-rmutex, wmutex = threading.Lock(), threading.Lock()
-readTry, rw_mutex = threading.Lock(), threading.Lock()
-
-class SimpleThreadedXMLRPCServer(ThreadingMixIn, SimpleXMLRPCServer):
-    pass
-
 def run_server(host, port, logger):
 
     server_addr = (host, port)
-    server = SimpleThreadedXMLRPCServer(server_addr, logRequests=False, allow_none=True)
+    server = SimpleXMLRPCServer(server_addr, logRequests=False, allow_none=True)
 
     server.register_function(delete, 'delete')
     server.register_function(get, 'get')
@@ -65,83 +55,47 @@ def run_server(host, port, logger):
 
 def get(key):
     """
-    Get value from keystore, threadsafe.
+    Get value from keystore.
 
     Arguments:
         key -- key to be retrieved
     """
 
-    with readTry:
-        with rmutex:
-            global r_count
-            r_count += 1
-            if (r_count == 1):
-                rw_mutex.acquire()
-
     o = db.get(key.encode("utf8"))
     if o:
         logger.info("GET :: {}, {}".format(key, len(o)))
-
-    with rmutex:
-        r_count -= 1
-        if (r_count == 0):
-            rw_mutex.release()
 
     return o.decode("utf8") if o else None
 
 def put(key, value):
     """
-    Put value on keystore, threadsafe.
+    Put value on keystore.
 
     Arguments:
         key -- key to be added
         value -- value to be stored
     """
 
-    with wmutex:
-        global w_count
-        w_count += 1
-        if (w_count == 1):
-            readTry.acquire()
-
-    with rw_mutex:
-        logger.info("PUT :: {}, {}".format(key, len(value)))
-        db.put(key.encode("utf8"), value.encode("utf8"))
-
-    with wmutex:
-        w_count -= 1
-        if (w_count == 0):
-            readTry.release()
+    logger.info("PUT :: {}, {}".format(key, len(value)))
+    db.put(key.encode("utf8"), value.encode("utf8"))
 
 
 def delete(key):
     """
-    Delete value from keystore, threadsafe.
+    Delete value from keystore.
 
     Arguments:
         key -- key to be removed
     """
 
-    with wmutex:
-        global w_count
-        w_count += 1
-        if (w_count == 1):
-            readTry.acquire()
-
-    with rw_mutex:
-        logger.info("DEL :: {}".format(key))
-        db.delete(key.encode("utf8"))
-
-    with wmutex:
-        w_count -= 1
-        if (w_count == 0):
-            readTry.release()
+    logger.info("DEL :: {}".format(key))
+    db.delete(key.encode("utf8"))
 
 
 def announce(idx):
     """
     Function to announce connection from client. Ensures connection is
-    alive and secure.
+    alive.
 
     Arguments:
         idx -- wallet id
@@ -207,7 +161,7 @@ if __name__ == '__main__':
     my_port = int(os.environ.get("LISTEN_PORT", port))
 
     try:
-        dbpath = '/db_cosigner'
+        dbpath = 'db_cosigner'
     except KeyError as e:
         logger.error("Required variable {} not set".format(e))
         sys.exit(1)

@@ -1,0 +1,13 @@
+upstream cosignerpool {
+    server cosignerpool:50051;
+}
+
+server {
+	listen 5001 http2;
+	server_name _;
+
+        location / {
+		grpc_pass grpc://cosignerpool;
+        }
+
+}

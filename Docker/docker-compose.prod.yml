@@ -1,0 +1,51 @@
+version: '3.7'
+
+services:
+    cosignerpool:
+        depends_on:
+            - nginxSSL
+    nginx:
+        image: nginx:latest
+        network_mode: host
+        ports:
+            - "80:80"
+        volumes:
+            - "./Nginx/Cosignerpool.template:/etc/nginx/conf.d/Cosignerpool.template"
+            - "web-root:/var/www/html"
+        command: /bin/bash -c "cat /etc/nginx/conf.d/Cosignerpool.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+    nginxSSL:
+        image: nginx:latest
+        ports:
+            - "443:443"
+        volumes:
+            - "./Nginx/entrypoint.sh:/app/entrypoint.sh"
+            - "./Nginx/CosignerpoolSSL.template:/etc/nginx/conf.d/CosignerpoolSSL.template"
+            - "/var/log/nginx/:/var/log/nginx/"
+            - "certbot-etc:/etc/letsencrypt"
+            - "certbot-var:/var/lib/letsencrypt"
+        environment:
+            - NGINX_HOST=${serverName}
+        restart: always
+        depends_on:
+            - certbot
+        command: /bin/sh -c /app/entrypoint.sh
+        networks:
+            - cosignerpool
+    certbot:
+        image: certbot/certbot
+        volumes:
+            - "./Certbot/entrypoint.sh:/app/entrypoint.sh"
+            - "certbot-etc:/etc/letsencrypt"
+            - "certbot-var:/var/lib/letsencrypt"
+            - "web-root:/var/www/html"
+        environment:
+            - CONTACT_EMAIL=$contactEmail
+            - CERT_DOMAINS=$certDomains
+        depends_on:
+            - nginx
+        entrypoint: /bin/sh -c /app/entrypoint.sh
+volumes:
+        certbot-etc:
+        certbot-var:
+        web-root:
+

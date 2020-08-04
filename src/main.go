@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"time"
 	"context"
 	"log"
@@ -63,6 +64,14 @@ func (s *server) GetTime(ctx context.Context, in *pb.Empty) (*pb.GetTimeResponse
 }
 
 func main() {
+        f, err := os.OpenFile("access.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+        if err != nil {
+            log.Fatalf("error opening file: %v", err)
+        }
+        defer f.Close()
+
+        log.SetOutput(f)
+
 	db, err = leveldb.OpenFile("/db_cosigner", nil)
 	defer db.Close()
 

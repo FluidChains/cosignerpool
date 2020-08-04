@@ -1,12 +1,8 @@
 version: '3.7'
 
 services:
-    cosignerpool:
-        depends_on:
-            - nginxSSL
     nginx:
         image: nginx:latest
-        network_mode: host
         ports:
             - "80:80"
         volumes:
@@ -28,6 +24,7 @@ services:
         restart: always
         depends_on:
             - certbot
+            - cosignerpool
         command: /bin/sh -c /app/entrypoint.sh
         networks:
             - cosignerpool

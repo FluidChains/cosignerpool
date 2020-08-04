@@ -5,4 +5,6 @@ LABEL maintainer "Karim Boucher <karim.boucher@fluidchains.com>"
 WORKDIR /go/src/app
 COPY . .
 
-ENTRYPOINT go run -v main.go
+RUN go build -o main .
+
+ENTRYPOINT /go/src/app/main

@@ -1,14 +1,8 @@
-FROM python:3.7
+FROM golang:1.14
+LABEL maintainer "Karim Boucher <karim.boucher@fluidchains.com>"
 
-COPY . /app
 
-WORKDIR /app
+WORKDIR /go/src/app
+COPY . .
 
-RUN pip install --user -r requirements.txt
-
-WORKDIR /app/src
-
-EXPOSE ${COSIGNER_SERVICE_PORT}
-
-ENTRYPOINT exec python3 cosignerpool.py
-
+ENTRYPOINT go run -v main.go

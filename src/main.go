@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"io"
 	"time"
 	"context"
 	"log"
@@ -29,6 +30,7 @@ type server struct {
 func (s *server) Put(ctx context.Context, in *pb.PutRequest) (*pb.PutResponse, error) {
 	var err = db.Put([]byte(in.GetKey()), []byte(in.GetValue()), nil)
 	if err != nil {
+            log.Printf("gRpc error: %v", err.Error())
             return nil, status.Errorf(codes.NotFound, err.Error())
         }
 	log.Printf("Inserted: %v:%v", in.GetKey(), in.GetValue())
@@ -38,6 +40,7 @@ func (s *server) Put(ctx context.Context, in *pb.PutRequest) (*pb.PutResponse, e
 func (s *server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, error) {
 	var data, err = db.Get([]byte(in.GetKey()), nil)
 	if err != nil {
+            log.Printf("gRpc error: %v", err.Error())
             return nil, status.Errorf(codes.NotFound, err.Error())
         }
 	log.Printf("Retrieved: %v", in.GetKey())
@@ -47,6 +50,7 @@ func (s *server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, e
 func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteResponse, error) {
 	var err = db.Delete([]byte(in.GetKey()), nil)
 	if err != nil {
+            log.Printf("gRpc error: %v", err.Error())
             return nil, status.Errorf(codes.NotFound, err.Error())
         }
 	log.Printf("Deleted: %v", in.GetKey())
@@ -64,13 +68,16 @@ func (s *server) GetTime(ctx context.Context, in *pb.Empty) (*pb.GetTimeResponse
 }
 
 func main() {
-        f, err := os.OpenFile("access.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+        _ = os.Mkdir("log", 0755)
+        f, err := os.OpenFile("log/access.log", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
         if err != nil {
             log.Fatalf("error opening file: %v", err)
         }
         defer f.Close()
 
-        log.SetOutput(f)
+        mw := io.MultiWriter(os.Stdout, f)
+        log.SetOutput(mw)
+        log.Printf("Starting Cosignerpool server")
 
 	db, err = leveldb.OpenFile("/db_cosigner", nil)
 	defer db.Close()

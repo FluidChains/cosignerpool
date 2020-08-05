@@ -20,7 +20,7 @@ var db *leveldb.DB
 var err error
 
 const (
-	port = "localhost:50051"
+	port = "0.0.0.0:50051"
 )
 
 type server struct {

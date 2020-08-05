@@ -4,7 +4,7 @@ services:
     nginx:
         image: nginx:latest
         ports:
-            - "5001:5001"
+            - "80:80"
         volumes:
             - "./Nginx/Cosignerpool.development.template:/etc/nginx/conf.d/Cosignerpool.development.template"
         restart: always

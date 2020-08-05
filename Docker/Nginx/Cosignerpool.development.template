@@ -11,7 +11,7 @@ map $upstream_trailer_grpc_status $grpc_status {
 }
 
 server {
-	listen 5001 http2;
+	listen 80 http2;
 	server_name _;
 	access_log   /var/log/nginx/grpc_log.json grpc_json;
 

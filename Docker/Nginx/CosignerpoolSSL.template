@@ -18,7 +18,15 @@ server {
     ssl_certificate /etc/letsencrypt/live/cosigner/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/cosigner/privkey.pem;
 
-    location / {
-                grpc_pass grpc://cosignerpool;
+    location /cosignerpool. {
+        grpc_pass grpc://cosignerpool_service;
     }
+
+    # Error responses
+    include conf.d/errors.grpc_conf; # gRPC-compliant error responses
+    default_type application/grpc;   # Ensure gRPC for all error responses
+}
+
+upstream cosignerpool_service {
+    server cosignerpool:50051;
 }

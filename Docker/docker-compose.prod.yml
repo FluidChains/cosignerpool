@@ -16,6 +16,7 @@ services:
         volumes:
             - "./Nginx/entrypoint.sh:/app/entrypoint.sh"
             - "./Nginx/CosignerpoolSSL.template:/etc/nginx/conf.d/CosignerpoolSSL.template"
+            - "./Nginx/errors.grpc_conf:/etc/nginx/conf.d/errors.grpc_conf"
             - "/var/log/nginx/:/var/log/nginx/"
             - "certbot-etc:/etc/letsencrypt"
             - "certbot-var:/var/lib/letsencrypt"

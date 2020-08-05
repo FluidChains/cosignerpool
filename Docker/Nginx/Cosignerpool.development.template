@@ -15,8 +15,15 @@ server {
 	server_name _;
 	access_log   /var/log/nginx/grpc_log.json grpc_json;
 
-        location / {
-		grpc_pass grpc://cosignerpool;
+        location /cosignerpool. {
+		grpc_pass grpc://cosignerpool_service;
         }
 
+        # Error responses
+        include conf.d/errors.grpc_conf; # gRPC-compliant error responses
+        default_type application/grpc;   # Ensure gRPC for all error responses
+}
+
+upstream cosignerpool_service {
+    server cosignerpool:50051;
 }

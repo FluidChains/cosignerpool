@@ -28,7 +28,7 @@ type server struct {
 }
 
 func (s *server) Put(ctx context.Context, in *pb.PutRequest) (*pb.PutResponse, error) {
-	var err = mc.Set(&memcache.Item{Key: string(in.GetKey()), Value: []byte(in.GetValue())})
+	var err = mc.Set(&memcache.Item{Key: string(in.GetKey()), Value: []byte(in.GetValue()), Expiration: in.GetExpiration()})
 	if err != nil {
             log.Printf("gRpc error: %v", err.Error())
             return nil, status.Errorf(codes.NotFound, err.Error())

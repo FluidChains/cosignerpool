@@ -26,6 +26,7 @@ service Cosignerpool {
 message PutRequest {
   string Key = 1;
   string Value = 2;
+  int32 Expiration = 3;
 }
 
 message PutResponse {

@@ -6,10 +6,12 @@ services:
         build:
             context: ../src
             dockerfile: $PWD/Cosignerpool/Dockerfile
-        volumes:
-            - "/db_cosigner:/db_cosigner"
         expose:
             - 50051
+        networks:
+            - cosignerpool
+    memcached:
+        container_name: memcached
         networks:
             - cosignerpool
 

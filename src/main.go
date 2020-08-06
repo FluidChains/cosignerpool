@@ -8,7 +8,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/bradfitz/gomemcache/memcache"
 
 	"google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -16,11 +16,11 @@ import (
 	pb "github.com/FluidChains/cosignerpool/proto"
 )
 
-var db *leveldb.DB
+var mc *memcache.Client
 var err error
 
 const (
-	port = "localhost:50051"
+	port = "0.0.0.0:50051"
 )
 
 type server struct {
@@ -28,7 +28,7 @@ type server struct {
 }
 
 func (s *server) Put(ctx context.Context, in *pb.PutRequest) (*pb.PutResponse, error) {
-	var err = db.Put([]byte(in.GetKey()), []byte(in.GetValue()), nil)
+	var err = mc.Set(&memcache.Item{Key: string(in.GetKey()), Value: []byte(in.GetValue())})
 	if err != nil {
             log.Printf("gRpc error: %v", err.Error())
             return nil, status.Errorf(codes.NotFound, err.Error())
@@ -38,17 +38,17 @@ func (s *server) Put(ctx context.Context, in *pb.PutRequest) (*pb.PutResponse, e
 }
 
 func (s *server) Get(ctx context.Context, in *pb.GetRequest) (*pb.GetResponse, error) {
-	var data, err = db.Get([]byte(in.GetKey()), nil)
+	var it, err = mc.Get(string(in.GetKey()))
 	if err != nil {
             log.Printf("gRpc error: %v", err.Error())
             return nil, status.Errorf(codes.NotFound, err.Error())
         }
 	log.Printf("Retrieved: %v", in.GetKey())
-	return &pb.GetResponse{Value: string(data)}, nil
+	return &pb.GetResponse{Value: string(it.Value)}, nil
 }
 
 func (s *server) Delete(ctx context.Context, in *pb.DeleteRequest) (*pb.DeleteResponse, error) {
-	var err = db.Delete([]byte(in.GetKey()), nil)
+	var err = mc.Delete(string(in.GetKey()))
 	if err != nil {
             log.Printf("gRpc error: %v", err.Error())
             return nil, status.Errorf(codes.NotFound, err.Error())
@@ -79,8 +79,7 @@ func main() {
         log.SetOutput(mw)
         log.Printf("Starting Cosignerpool server")
 
-	db, err = leveldb.OpenFile("/db_cosigner", nil)
-	defer db.Close()
+	mc = memcache.New("memcached:11211")
 
 	lis, err := net.Listen("tcp", port)
 	if err != nil {

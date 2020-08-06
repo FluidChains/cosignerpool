@@ -12,6 +12,7 @@ services:
             - cosignerpool
     memcached:
         container_name: memcached
+        image: memcached:latest
         networks:
             - cosignerpool
 

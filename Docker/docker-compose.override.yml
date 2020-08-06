@@ -4,9 +4,10 @@ services:
     nginx:
         image: nginx:latest
         ports:
-            - "5001:5001"
+            - "80:80"
         volumes:
             - "./Nginx/Cosignerpool.development.template:/etc/nginx/conf.d/Cosignerpool.development.template"
+            - "./Nginx/errors.grpc_conf:/etc/nginx/conf.d/errors.grpc_conf"
         restart: always
         command: /bin/bash -c "cat /etc/nginx/conf.d/Cosignerpool.development.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
         depends_on:

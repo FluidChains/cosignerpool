@@ -7,4 +7,4 @@ do
 done
 
 echo $NGINX_HOST
-/bin/bash -c "envsubst < /etc/nginx/conf.d/CosignerpoolSSL.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+/bin/bash -c "envsubst '$NGINX_HOST' < /etc/nginx/conf.d/CosignerpoolSSL.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"

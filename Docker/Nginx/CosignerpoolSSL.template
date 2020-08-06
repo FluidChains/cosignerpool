@@ -1,15 +1,32 @@
-upstream cosignerpool {
-    server cosignerpool:50051;
+log_format grpc_json escape=json '{"timestamp":"$time_iso8601","client":"$remote_addr",'
+                                  '"uri":"$uri","http-status":$status,'
+                                  '"grpc-status":$grpc_status,"upstream":"$upstream_addr"'
+                                  '"rx-bytes":$request_length,"tx-bytes":$bytes_sent}';
+
+map $upstream_trailer_grpc_status $grpc_status {
+    default $upstream_trailer_grpc_status; # We normally expect to receive
+                                           # grpc-status as a trailer
+    ''      $sent_http_grpc_status;        # Else use the header, regardless of
+                                           # who generated it
 }
 
 server {
-    listen 443 ssl http2;
+    listen 443 http2 ssl;
     server_name "${NGINX_HOST}";
+    access_log   /var/log/nginx/grpc_log.json grpc_json;
 
     ssl_certificate /etc/letsencrypt/live/cosigner/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/cosigner/privkey.pem;
 
-    location / {
-                grpc_pass grpc://cosignerpool;
+    location /cosignerpool. {
+        grpc_pass grpc://cosignerpool_service;
     }
+
+    # Error responses
+    include conf.d/errors.grpc_conf; # gRPC-compliant error responses
+    default_type application/grpc;   # Ensure gRPC for all error responses
+}
+
+upstream cosignerpool_service {
+    server cosignerpool:50051;
 }
